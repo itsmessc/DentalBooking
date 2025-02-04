@@ -1,76 +1,94 @@
-import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { login } from "../redux/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../redux/authSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Regex for validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
 
 const Login = () => {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const [passwordVisible, setPasswordVisible] = useState(false);
+    const navigation = useNavigation();
+    const dispatch = useDispatch();
+    const { loading, error } = useSelector((state) => state.auth);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [validationError, setValidationError] = useState("");
+    token=AsyncStorage.getItem("token");
+    useEffect(() => {
+        if (token) {
+            navigation.replace("Dashboard");
+        }
+    }, [token]);
+    const handleLogin = () => {
+        setValidationError("");
 
-  const handleLogin = () => {
-    if (!emailRegex.test(email)) {
-      setError("Invalid email format.");
-      return;
-    }
-    if (!passwordRegex.test(password)) {
-      setError("Password must contain at least 6 characters, including letters and numbers.");
-      return;
-    }
-    
-    dispatch(login({ user: { name: "User", email, phone: "" }, token: "dummy_token" }));
-    setError(null);
-    console.log("Login successful");
-  };
+        // Validate email format
+        if (!emailRegex.test(email)) {
+            setValidationError("Invalid email format.");
+            return;
+        }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back! 👋</Text>
-      <TextInput
-        label="Email"
-        mode="outlined"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-      />
-      <TextInput
-        label="Password"
-        mode="outlined"
-        secureTextEntry={!passwordVisible}
-        value={password}
-        onChangeText={setPassword}
-        right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} onPress={() => setPasswordVisible(!passwordVisible)} />}
-        style={styles.input}
-      />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+        // Validate password format
+        if (!passwordRegex.test(password)) {
+            setValidationError("Password must be at least 6 characters long and include letters and numbers.");
+            return;
+        }
 
-      <Button mode="contained" onPress={handleLogin} style={styles.button}>
-        Login
-      </Button>
+        // Dispatch login action if validation passes
+        dispatch(loginUser(email, password, navigation));
+    };
 
-      <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-        <Text style={styles.linkText}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Welcome Back! 👋</Text>
+            <TextInput
+                label="Email"
+                mode="outlined"
+                value={email}
+                onChangeText={setEmail}
+                style={styles.input}
+                keyboardType="email-address"
+                autoCapitalize="none"
+            />
+            <TextInput
+                label="Password"
+                mode="outlined"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                style={styles.input}
+            />
+
+            {/* Show validation errors */}
+            {validationError ? <Text style={styles.errorText}>{validationError}</Text> : null}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            {loading ? (
+                <ActivityIndicator size="large" color="blue" />
+            ) : (
+                <Button mode="contained" onPress={handleLogin} style={styles.button}>
+                    Login
+                </Button>
+            )}
+
+            <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+                <Text style={styles.linkText}>Don't have an account? Sign up</Text>
+            </TouchableOpacity>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 26, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
-  input: { marginBottom: 10 },
-  button: { marginTop: 10 },
-  linkText: { textAlign: "center", marginTop: 10, color: "blue" },
-  errorText: { color: "red", fontSize: 12, marginBottom: 5 },
+    container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+    title: { fontSize: 26, fontWeight: "bold", marginBottom: 20 },
+    input: { width: "100%", marginBottom: 10 },
+    button: { marginTop: 10, width: "100%" },
+    linkText: { textAlign: "center", marginTop: 10, color: "blue" },
+    errorText: { color: "red", fontSize: 12, marginBottom: 5 },
 });
 
 export default Login;
