@@ -1,37 +1,183 @@
-import React from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import { 
+  View, StyleSheet, Text, FlatList, ActivityIndicator, Alert, RefreshControl, StatusBar, SafeAreaView 
+} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/authSlice";
-import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { Button, Card, Avatar, IconButton } from "react-native-paper";
+
+// API Base URL
+const API_URL = "https://v0ck2c87-5000.inc1.devtunnels.ms/appointments";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const { user } = useSelector((state) => state.auth);
+  const isFocused = useIsFocused();
+  const { user, token } = useSelector((state) => state.auth);
 
-  const handleLogout = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 📌 Fetch Appointments
+  const fetchAppointments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("User:", user);
+      const response = await fetch(`${API_URL}/user/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch appointments");
+
+      const data = await response.json();
+      setAppointments(data);
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+      setError("No Appointments Found");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 📌 Fetch data on screen focus
+  useEffect(() => {
+    if (isFocused) fetchAppointments();
+  }, [isFocused]);
+
+  // 📌 Pull to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAppointments();
+    setRefreshing(false);
+  };
+
+  // 📌 Handle Logout
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("token");
     dispatch(logout());
-    navigation.replace("Login"); // Redirect to Login after logout
+    navigation.replace("Login");
+  };
+
+  // 📌 Handle Appointment Cancellation
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await fetch(`${API_URL}/cancel/${appointmentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to cancel appointment");
+
+      Alert.alert("Success", "Appointment canceled successfully");
+      fetchAppointments();
+    } catch (err) {
+      console.error("Error canceling appointment:", err);
+      Alert.alert("Error", "Failed to cancel the appointment. Please try again.");
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome, {user?.name || "User"} 👋</Text>
-      <Text style={styles.subtitle}>You are successfully logged in.</Text>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Status Bar (Black) */}
+      <StatusBar backgroundColor="#007AFF" barStyle="light-content" />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Avatar.Text 
+          size={50} 
+          label={user?.name ? user.name[0].toUpperCase() : "U"} 
+          style={styles.avatar} 
+        />
+        <View>
+          <Text style={styles.title}>Hi, {user?.name || "User"} 👋</Text>
+          <Text style={styles.subtitle}>Your upcoming appointments</Text>
+        </View>
+        <IconButton 
+          icon="logout" 
+          size={24} 
+          color="white" 
+          onPress={handleLogout} 
+        />
+      </View>
+
+      {/* Appointments List */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : appointments.length === 0 ? (
+        <Text style={styles.noAppointments}>No upcoming appointments.</Text>
+      ) : (
+        <FlatList
+          data={appointments}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          renderItem={({ item }) => (
+            <Card style={styles.card}>
+              <Card.Title
+                title={item.service}
+                subtitle={`Dr. ${item.dentist} • ${item.date} • ${item.time}`}
+                left={(props) => <Avatar.Icon {...props} icon="tooth" />}
+                right={(props) => (
+                  <IconButton 
+                    {...props} 
+                    icon="close-circle" 
+                    color="red" 
+                    onPress={() => cancelAppointment(item.id)} 
+                  />
+                )}
+              />
+            </Card>
+          )}
+        />
+      )}
+
+      {/* Action Buttons */}
+      <Button
+        mode="contained"
+        onPress={() => navigation.navigate("LocationSelection")}
+        style={styles.button}
+      >
+        + Book an Appointment
+      </Button>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
-  subtitle: { fontSize: 16, color: "gray", marginBottom: 20 },
-  button: { backgroundColor: "red", padding: 12, borderRadius: 5 },
-  buttonText: { color: "white", fontSize: 16 },
+  safeArea: { flex: 1, backgroundColor: "#F5F5F5" },
+
+  // 📌 Header Styles
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#007AFF",
+    padding: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  avatar: { marginRight: 10, backgroundColor: "white" },
+  title: { fontSize: 20, fontWeight: "bold", color: "white" },
+  subtitle: { fontSize: 14, color: "white" },
+
+  // 📌 Loader & Error Styles
+  loader: { marginTop: 30 },
+  errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 10 },
+
+  // 📌 Appointments List Styles
+  noAppointments: { fontSize: 16, fontStyle: "italic", textAlign: "center", color: "gray", marginTop: 20 },
+  card: { marginHorizontal: 15, marginVertical: 10, borderRadius: 10, elevation: 3 },
+
+  // 📌 Buttons
+  button: { margin: 20, padding: 10, borderRadius: 10, backgroundColor: "#007AFF" },
 });
 
 export default Dashboard;

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native"; // ✅ Fix: Prevent Multiple Calls
 
 // Regex for validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,12 +18,23 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [validationError, setValidationError] = useState("");
-    token=AsyncStorage.getItem("token");
-    useEffect(() => {
-        if (token) {
-            navigation.replace("Dashboard");
-        }
-    }, [token]);
+
+    // ✅ Fix: Prevent multiple calls using `useFocusEffect`
+    useFocusEffect(
+        useCallback(() => {
+            const checkToken = async () => {
+                const token = await AsyncStorage.getItem("token");
+                console.log("Retrieved Token:", token);
+
+                if (token) {
+                    navigation.replace("Dashboard");
+                }
+            };
+
+            checkToken();
+        }, [])
+    );
+
     const handleLogin = () => {
         setValidationError("");
 
