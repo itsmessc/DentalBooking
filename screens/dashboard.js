@@ -31,7 +31,7 @@ const Dashboard = () => {
       const response = await fetch(`${API_URL}/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      console.log(JSON.stringify(response));
       if (!response.ok) throw new Error("Failed to fetch appointments");
 
       const data = await response.json();
