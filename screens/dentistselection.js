@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchDentists, setSelectedDentist } from "../redux/bookingSlice";
 import Constants from "expo-constants";
 
-// Get API URL from environment
 const API_URL = Constants.expoConfig.extra.API_URL;
 
 const DentistSelection = () => {
@@ -16,22 +15,22 @@ const DentistSelection = () => {
     // Get Redux state
     const { selectedService, selectedOffice, dentists, isLoading, selectedDentist } = useSelector((state) => state.booking);
 
-    // Fetch dentists filtered by the selected service
+    // Fetch dentists based on selected service and office
     useEffect(() => {
         if (selectedService && selectedOffice) {
-            dispatch(fetchDentists({ officeId: selectedOffice.id, serviceId: selectedService.id }));
+            dispatch(fetchDentists({ officeId: selectedOffice.id, serviceId: selectedService.name })); // Service name used
         }
     }, [selectedService, selectedOffice]);
 
-    // Handle selecting a dentist
+    // Select Dentist
     const selectDentist = (dentist) => {
         dispatch(setSelectedDentist(dentist));
     };
 
-    // Proceed to booking
+    // Proceed to Booking
     const proceedToBooking = () => {
         if (selectedDentist) {
-            navigation.navigate("Booking");
+            navigation.navigate("PickDateTime"); // Navigate to date/time selection
         } else {
             alert("Please select a dentist to proceed.");
         }
@@ -41,6 +40,8 @@ const DentistSelection = () => {
         <View style={styles.container}>
             {isLoading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
+            ) : dentists.length === 0 ? (
+                <Text style={styles.noResults}>No dentists available for this service.</Text>
             ) : (
                 <>
                     <Text style={styles.header}>Available Dentists for {selectedService?.name}</Text>
@@ -56,7 +57,6 @@ const DentistSelection = () => {
                                         left={(props) => <Avatar.Image {...props} source={{ uri: item.photo }} />}
                                         subtitleNumberOfLines={3}
                                     />
-                                    
                                 </Card>
                             </TouchableOpacity>
                         )}
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     header: { fontSize: 18, fontWeight: "bold", marginVertical: 10, textAlign: "center" },
     card: { marginVertical: 5, padding: 10, borderRadius: 8, backgroundColor: "white", borderWidth: 1, borderColor: "#ddd" },
     selectedCard: { borderColor: "#007AFF", borderWidth: 2 },
-    availability: { fontSize: 14, color: "#555", marginTop: 5 },
+    noResults: { textAlign: "center", fontSize: 16, color: "gray", marginTop: 20 },
     proceedButton: { marginTop: 10, padding: 10, backgroundColor: "#007AFF" },
 });
 

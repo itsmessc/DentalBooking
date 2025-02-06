@@ -22,22 +22,25 @@ export const fetchHospitalDetails = createAsyncThunk(
   }
 );
 
-// **Fetch Dentists Based on Selected Service**
+// **Fetch Dentists Based on Selected Service ID & Office**
 export const fetchDentists = createAsyncThunk(
   "booking/fetchDentists",
   async ({ officeId, serviceId }, { rejectWithValue }) => {
     try {
+      console.log("Fetching dentists for Office:", officeId, "Service ID:", serviceId); 
+
       const response = await fetch(`${API_URL}/dentists`);
       if (!response.ok) throw new Error("Failed to fetch dentists");
-      
+
       const allDentists = await response.json();
       console.log("All Dentists:", allDentists);
-      // Filter dentists based on selected office and service
+
       const filteredDentists = allDentists.filter(dentist => 
-        dentist.officeId === officeId && 
-        dentist.services.includes(serviceId) // Ensure the dentist offers the selected service
+          dentist.officeId === officeId && 
+          dentist.services.includes(serviceId)
       );
-      console.log("Filtered Dentists:", filteredDentists,serviceId,officeId);
+
+      console.log("Filtered Dentists:", filteredDentists);
       return filteredDentists;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -96,6 +99,9 @@ const bookingSlice = createSlice({
       state.selectedDentist = action.payload;
       AsyncStorage.setItem("selectedDentist", JSON.stringify(action.payload));
     },
+    setHospitalDetails: (state, action) => {
+      state.hospitalDetails = action.payload;
+    },
     clearBooking: (state) => {
       state.selectedOffice = null;
       state.selectedService = null;
@@ -151,5 +157,5 @@ const bookingSlice = createSlice({
 });
 
 // **Export Actions & Reducer**
-export const { setSelectedOffice, setSelectedService, setSelectedDentist, clearBooking } = bookingSlice.actions;
+export const { setSelectedOffice, setSelectedService, setSelectedDentist, setHospitalDetails, clearBooking } = bookingSlice.actions;
 export default bookingSlice.reducer;

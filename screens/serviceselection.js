@@ -6,34 +6,35 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchHospitalDetails, setSelectedService } from "../redux/bookingSlice";
 import Constants from "expo-constants";
 
-// API Key for Geoapify
+// API Base URL
+const API_URL = Constants.expoConfig.extra.API_URL;
 const GEOAPIFY_API_KEY = Constants.expoConfig.extra.GEOAPIFY_API_KEY;
 
 const ServiceSelection = () => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
 
-    // Get Redux State
+    // Get Redux state
     const { selectedOffice, hospitalDetails, selectedService, isLoading } = useSelector((state) => state.booking);
 
-    // Fetch hospital details only if not already available
+    // Fetch hospital details if not already fetched
     useEffect(() => {
-        if (!hospitalDetails && selectedOffice) {
+        if (selectedOffice && !hospitalDetails) {
             dispatch(fetchHospitalDetails(selectedOffice.id));
         }
     }, [selectedOffice]);
 
-    // Generate Static Map URL for Geoapify
+    // Generate the map URL
     const mapUrl = hospitalDetails
         ? `https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat:${hospitalDetails.location.lng},${hospitalDetails.location.lat}&zoom=15&marker=lonlat:${hospitalDetails.location.lng},${hospitalDetails.location.lat};type:awesome;color:%23bb3f73;size:x-large&apiKey=${GEOAPIFY_API_KEY}`
         : "";
 
     // Select service
     const selectService = (service) => {
-        dispatch(setSelectedService(service));
+        dispatch(setSelectedService({ id: service.id, name: service.id })); 
     };
 
-    // Navigate to booking page if a service is selected
+    // Proceed to the next step
     const proceedToBooking = () => {
         if (selectedService) {
             navigation.navigate("DentistSelection");
@@ -48,23 +49,20 @@ const ServiceSelection = () => {
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : (
                 <>
-                    {/* Hospital Information Card */}
+                    {/* Hospital Information */}
                     <Card style={styles.hospitalCard}>
                         <Card.Title
-                            title={hospitalDetails?.name || "Loading..."}
-                            subtitle={`${hospitalDetails?.address || "Address not available"} - ${hospitalDetails?.city || ""}, ${hospitalDetails?.zip || ""} • ⭐ ${hospitalDetails?.rating ? hospitalDetails.rating.toFixed(1) : "N/A"} / 5`}
+                            title={hospitalDetails.name}
+                            titleNumberOfLines={2}
                             left={(props) => <Avatar.Icon {...props} icon="hospital-building" />}
                         />
-
-                        {/* Hospital Details */}
                         <Card.Content>
-                            <Text style={styles.detailText}><Text style={styles.label}>Phone:</Text> {hospitalDetails?.contact || "Not Available"}</Text>
-                            <Text style={styles.detailText}><Text style={styles.label}>Rating:</Text> {hospitalDetails?.rating || "Not Available"}</Text>
-                            <Text style={styles.detailText}><Text style={styles.label}>Opening Hours:</Text> {hospitalDetails?.openingHours || "Not Available"}</Text>
-                            <Text style={styles.detailText}><Text style={styles.label}>Specialties:</Text> {hospitalDetails?.specialties?.join(", ") || "Not Available"}</Text>
+                            <Text style={styles.detailText}><Text style={styles.label}>Phone:</Text> {hospitalDetails.contact || "Not Available"}</Text>
+                            <Text style={styles.detailText}><Text style={styles.label}>Rating:</Text> {hospitalDetails.rating || "Not Available"}</Text>
+                            <Text style={styles.detailText}><Text style={styles.label}>Opening Hours:</Text> {hospitalDetails.openingHours['Monday'] || "Not Available"}</Text>
+                            <Text style={styles.detailText}><Text style={styles.label}>Specialties:</Text> {hospitalDetails.specialties?.join(", ") || "Not Available"}</Text>
                         </Card.Content>
 
-                        {/* Static Map */}
                         {mapUrl ? (
                             <Image source={{ uri: mapUrl }} style={styles.mapImage} resizeMode="cover" />
                         ) : (
@@ -75,7 +73,7 @@ const ServiceSelection = () => {
                     {/* Available Services */}
                     <Text style={styles.sectionTitle}>Available Services</Text>
                     <FlatList
-                        data={hospitalDetails?.services || []}
+                        data={hospitalDetails.services || []}
                         keyExtractor={(item) => item.id}
                         renderItem={({ item }) => (
                             <TouchableOpacity onPress={() => selectService(item)}>
@@ -100,28 +98,11 @@ const ServiceSelection = () => {
     );
 };
 
-// Styles restored from your original design
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: "#F5F5F5", 
-        padding: 10 
-    },
-    hospitalCard: { 
-        marginBottom: 15, 
-        borderRadius: 10 
-    },
-    mapImage: { 
-        width: "100%", 
-        height: 180, 
-        borderRadius: 10, 
-        marginTop: 10 
-    },
-    sectionTitle: { 
-        fontSize: 18, 
-        fontWeight: "bold", 
-        marginVertical: 10 
-    },
+    container: { flex: 1, backgroundColor: "#F5F5F5", padding: 10 },
+    hospitalCard: { marginBottom: 15, borderRadius: 10 },
+    mapImage: { width: "100%", height: 180, borderRadius: 10, marginTop: 10 },
+    sectionTitle: { fontSize: 18, fontWeight: "bold", marginVertical: 10 },
     card: {
         marginVertical: 5,
         padding: 10,
@@ -134,24 +115,8 @@ const styles = StyleSheet.create({
         borderColor: "#007AFF",
         borderWidth: 2,
     },
-    detailText: { 
-        fontSize: 14, 
-        color: "#555", 
-        marginVertical: 5 
-    },
-    label: { 
-        fontWeight: "bold", 
-        color: "#000" 
-    },
-    description: { 
-        fontSize: 14, 
-        color: "#555" 
-    },
-    price: { 
-        fontSize: 16, 
-        fontWeight: "bold", 
-        marginTop: 5 
-    },
+    description: { fontSize: 14, color: "#555" },
+    price: { fontSize: 16, fontWeight: "bold", marginTop: 5 },
     proceedButton: {
         marginTop: 10,
         padding: 10,
@@ -163,6 +128,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginTop: 10,
     },
+    label: {
+        fontWeight: "bold",
+    },
+    detailText: {
+        fontSize: 14,
+        marginBottom: 5,
+    }
 });
 
 export default ServiceSelection;
