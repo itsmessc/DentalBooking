@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import Constants from "expo-constants";
 // API Base URL
-const API_URL = "https://v0ck2c87-5000.inc1.devtunnels.ms"; // Update with your backend URL
+const API_URL = Constants.expoConfig.extra.API_URL; // Update with your backend URL
 
 const initialState = {
   user: null,

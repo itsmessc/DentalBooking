@@ -7,9 +7,9 @@ import { logout } from "../redux/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { Button, Card, Avatar, IconButton } from "react-native-paper";
-
+import Constants from "expo-constants";
 // API Base URL
-const API_URL = "https://v0ck2c87-5000.inc1.devtunnels.ms/appointments";
+const API_URL = Constants.expoConfig.extra.API_URL;
 
 const Dashboard = () => {
   const dispatch = useDispatch();

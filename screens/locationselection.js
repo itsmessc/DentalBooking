@@ -12,9 +12,10 @@ import {
 import * as Location from "expo-location"; // Import Expo Location API
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import Constants from "expo-constants";
 
 // API Base URL
-const API_URL = "https://v0ck2c87-5000.inc1.devtunnels.ms/dental-offices";
+const API_URL = Constants.expoConfig.extra.API_URL;
 
 // Haversine Formula for Distance Calculation
 const getDistance = (lat1, lon1, lat2, lon2) => {
