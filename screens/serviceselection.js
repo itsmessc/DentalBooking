@@ -1,36 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { Card, Button, Avatar } from "react-native-paper";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { setHospitalDetails, setSelectedService } from "../redux/bookingSlice";
 import Constants from "expo-constants";
+
 // 📌 API Base URL
 const API_URL = Constants.expoConfig.extra.API_URL;
-const GEOAPIFY_API_KEY = Constants.expoConfig.extra.GEOAPIFY_API_KEY; // Replace with a valid Geoapify API key
+const GEOAPIFY_API_KEY = Constants.expoConfig.extra.GEOAPIFY_API_KEY;
 
 const ServiceSelection = () => {
     const navigation = useNavigation();
-    const route = useRoute();
-    const { selectedOffice } = route.params;
+    const dispatch = useDispatch();
 
-    const [hospitalDetails, setHospitalDetails] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [selectedService, setSelectedService] = useState(null);
+    // Get Redux State
+    const { selectedOffice, hospitalDetails, selectedService } = useSelector((state) => state.booking);
 
-    // 📌 Fetch Hospital Details & Services
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const response = await fetch(`${API_URL}/dental-offices/${selectedOffice.id}`);
                 const data = await response.json();
-                setHospitalDetails(data);
+                dispatch(setHospitalDetails(data));
             } catch (error) {
                 console.error("Error fetching hospital details:", error);
-            } finally {
-                setLoading(false);
             }
         };
 
-        fetchDetails();
+        if (!hospitalDetails) {
+            fetchDetails();
+        }
     }, []);
 
     // 📌 Generate Geoapify Static Map URL
@@ -40,13 +40,13 @@ const ServiceSelection = () => {
 
     // 📌 Select Service
     const selectService = (service) => {
-        setSelectedService(service);
+        dispatch(setSelectedService(service));
     };
 
     // 📌 Proceed to Booking
     const proceedToBooking = () => {
         if (selectedService) {
-            navigation.navigate("Booking", { selectedOffice, selectedService });
+            navigation.navigate("Booking");
         } else {
             alert("Please select a service to proceed.");
         }
@@ -54,7 +54,7 @@ const ServiceSelection = () => {
 
     return (
         <View style={styles.container}>
-            {loading ? (
+            {!hospitalDetails ? (
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : (
                 <>
@@ -62,13 +62,14 @@ const ServiceSelection = () => {
                     <Card style={styles.hospitalCard}>
                         <Card.Title
                             title={hospitalDetails?.name || "Loading..."}
-                            titleNumberOfLines={2} // Allow multiple lines if needed
+                            titleNumberOfLines={2}
                             left={(props) => <Avatar.Icon {...props} icon="hospital-building" />}
                         />
 
-                        {/* 📌 Hospital Details (Separate Content) */}
+                        {/* 📌 Hospital Details */}
                         <Card.Content>
                             <Text style={styles.detailText}><Text style={styles.label}>Phone:</Text> {hospitalDetails?.contact || "Not Available"}</Text>
+                            <Text style={styles.detailText}><Text style={styles.label}>Rating:</Text> {hospitalDetails?.rating || "Not Available"}</Text>
                             <Text style={styles.detailText}><Text style={styles.label}>Opening Hours:</Text> {hospitalDetails?.openingHours || "Not Available"}</Text>
                             <Text style={styles.detailText}><Text style={styles.label}>Specialties:</Text> {hospitalDetails?.specialties?.join(", ") || "Not Available"}</Text>
                         </Card.Content>
@@ -80,7 +81,6 @@ const ServiceSelection = () => {
                             <Text style={styles.errorText}>Map not available</Text>
                         )}
                     </Card>
-
 
                     {/* 📌 Available Services */}
                     <Text style={styles.sectionTitle}>Available Services</Text>

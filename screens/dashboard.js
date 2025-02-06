@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { 
   View, StyleSheet, Text, FlatList, ActivityIndicator, Alert, RefreshControl, StatusBar, SafeAreaView 
 } from "react-native";
@@ -8,6 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { Button, Card, Avatar, IconButton } from "react-native-paper";
 import Constants from "expo-constants";
+
 // API Base URL
 const API_URL = Constants.expoConfig.extra.API_URL;
 
@@ -22,19 +23,22 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // 📌 Fetch Appointments
-  const fetchAppointments = async () => {
+  // Fetch Appointments
+  const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("User:", user);
-      const response = await fetch(`${API_URL}/user/${user.id}`, {
+      console.log("Fetching Appointments for User:", user);
+
+      const response = await fetch(`${API_URL}/appointments/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log(JSON.stringify(response));
+
       if (!response.ok) throw new Error("Failed to fetch appointments");
 
       const data = await response.json();
+      console.log("Appointments Data:", JSON.stringify(data, null, 2));
+
       setAppointments(data);
     } catch (err) {
       console.error("Error fetching appointments:", err);
@@ -42,32 +46,32 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, token]);
 
-  // 📌 Fetch data on screen focus
+  // Fetch data on screen focus
   useEffect(() => {
     if (isFocused) fetchAppointments();
-  }, [isFocused]);
+  }, [isFocused, fetchAppointments]);
 
-  // 📌 Pull to refresh
-  const onRefresh = async () => {
+  //  Pull-to-refresh Function
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAppointments();
     setRefreshing(false);
-  };
+  }, [fetchAppointments]);
 
-  // 📌 Handle Logout
+  // Handle Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
     dispatch(logout());
     navigation.replace("Login");
   };
 
-  // 📌 Handle Appointment Cancellation
+  //  Handle Appointment Cancellation
   const cancelAppointment = async (appointmentId) => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const response = await fetch(`${API_URL}/cancel/${appointmentId}`, {
+      const response = await fetch(`${API_URL}/appointments/cancel/${appointmentId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -154,8 +158,6 @@ const Dashboard = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F5F5F5" },
-
-  // 📌 Header Styles
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -167,16 +169,10 @@ const styles = StyleSheet.create({
   avatar: { marginRight: 10, backgroundColor: "white" },
   title: { fontSize: 20, fontWeight: "bold", color: "white" },
   subtitle: { fontSize: 14, color: "white" },
-
-  // 📌 Loader & Error Styles
   loader: { marginTop: 30 },
   errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 10 },
-
-  // 📌 Appointments List Styles
   noAppointments: { fontSize: 16, fontStyle: "italic", textAlign: "center", color: "gray", marginTop: 20 },
   card: { marginHorizontal: 15, marginVertical: 10, borderRadius: 10, elevation: 3 },
-
-  // 📌 Buttons
   button: { margin: 20, padding: 10, borderRadius: 10, backgroundColor: "#007AFF" },
 });
 

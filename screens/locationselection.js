@@ -9,9 +9,11 @@ import {
     TouchableOpacity,
     Alert,
 } from "react-native";
-import * as Location from "expo-location"; // Import Expo Location API
+import * as Location from "expo-location";
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedOffice, setUserLocation, setPostalCode, setDentalOffices } from "../redux/bookingSlice";
 import Constants from "expo-constants";
 
 // API Base URL
@@ -33,15 +35,17 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 
 const LocationSelection = () => {
     const navigation = useNavigation();
+    const dispatch = useDispatch();
+
+    // Get Redux State
+    const { userLocation, postalCode, dentalOffices } = useSelector((state) => state.booking);
+
     const [searchQuery, setSearchQuery] = useState("");
-    const [dentalOffices, setDentalOffices] = useState([]);
     const [filteredOffices, setFilteredOffices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [userLocation, setUserLocation] = useState(null);
-    const [postalCode, setPostalCode] = useState("");
 
-    // Fetch User's Location
+    // Fetch User's Location & Postal Code
     useEffect(() => {
         const fetchUserLocation = async () => {
             let { status } = await Location.requestForegroundPermissionsAsync();
@@ -54,14 +58,16 @@ const LocationSelection = () => {
 
             let location = await Location.getCurrentPositionAsync({});
             const { latitude, longitude } = location.coords;
-            setUserLocation({ latitude, longitude });
+            dispatch(setUserLocation({ latitude, longitude }));
 
             // Reverse Geocode to get Postal Code
             const [address] = await Location.reverseGeocodeAsync({ latitude, longitude });
-            setPostalCode(address.postalCode || "Unknown");
+            dispatch(setPostalCode(address.postalCode || "Unknown"));
         };
 
-        fetchUserLocation();
+        if (!userLocation) {
+            fetchUserLocation();
+        }
     }, []);
 
     // Fetch Dental Offices and Sort by Distance
@@ -80,7 +86,7 @@ const LocationSelection = () => {
                     })).sort((a, b) => a.distance - b.distance); // Sort by nearest
                 }
 
-                setDentalOffices(data);
+                dispatch(setDentalOffices(data));
                 setFilteredOffices(data);
             } catch (err) {
                 console.error("Error fetching offices:", err);
@@ -112,8 +118,8 @@ const LocationSelection = () => {
 
     // Select Dental Office
     const selectOffice = (office) => {
-        console.log("Selected Office:", office);
-        navigation.navigate("ServiceSelection", { selectedOffice: office });
+        dispatch(setSelectedOffice(office));
+        navigation.navigate("ServiceSelection");
     };
 
     return (
@@ -135,6 +141,7 @@ const LocationSelection = () => {
                 onChangeText={handleSearch}
             />
             <Text style={styles.subtitle1}>Nearest Hospitals</Text>
+            
             {/* Loading & Error Handling */}
             {loading ? (
                 <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
@@ -165,67 +172,12 @@ const LocationSelection = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#F5F5F5",
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#007AFF",
-      padding: 20,
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-    },
-    avatar: {
-      backgroundColor: "white",
-      marginRight: 10,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "white",
-    },
-    subtitle: {
-      fontSize: 14,
-      color: "white",
-    },
-    subtitle1: {
-      fontSize: 14,
-      color: "black",
-      marginLeft: 16,
-    },
-    searchBar: {
-      margin: 15,
-      padding: 10,
-      borderRadius: 8,
-      backgroundColor: "white",
-      borderWidth: 1,
-      borderColor: "#ddd",
-    },
-    loader: {
-      marginTop: 30,
-    },
-    errorText: {
-      fontSize: 16,
-      color: "red",
-      textAlign: "center",
-      marginTop: 10,
-    },
-    noResults: {
-      fontSize: 16,
-      fontStyle: "italic",
-      textAlign: "center",
-      color: "gray",
-      marginTop: 20,
-    },
-    card: {
-      marginHorizontal: 15,
-      marginVertical: 10,
-      borderRadius: 10,
-      elevation: 3,
-    },
-  });
-  
+    container: { flex: 1, backgroundColor: "#F5F5F5" },
+    header: { flexDirection: "row", alignItems: "center", backgroundColor: "#007AFF", padding: 20, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+    avatar: { backgroundColor: "white", marginRight: 10 },
+    title: { fontSize: 18, fontWeight: "bold", color: "white" },
+    subtitle: { fontSize: 14, color: "white" },
+    searchBar: { margin: 15, padding: 10, borderRadius: 8, backgroundColor: "white", borderWidth: 1, borderColor: "#ddd" },
+});
 
-  export default LocationSelection;
+export default LocationSelection;
