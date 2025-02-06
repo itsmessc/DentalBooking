@@ -31,7 +31,7 @@ const ServiceSelection = () => {
 
     // Select service
     const selectService = (service) => {
-        dispatch(setSelectedService({ id: service.id, name: service.name })); 
+        dispatch(setSelectedService({ id: service.id, name: service.name ,price: service.price})); 
     };
 
     // Proceed to the next step
