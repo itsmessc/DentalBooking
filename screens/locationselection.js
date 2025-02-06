@@ -69,7 +69,7 @@ const LocationSelection = () => {
         const fetchOffices = async () => {
             setLoading(true);
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(`${API_URL}/dental-offices`);
                 let data = await response.json();
 
                 if (userLocation) {
