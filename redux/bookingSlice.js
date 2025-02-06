@@ -58,7 +58,7 @@ export const confirmAppointment = createAsyncThunk(
   "booking/confirmAppointment",
   async (appointmentData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_URL}/appointments`, {
+      const response = await fetch(`${API_URL}/appointments/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(appointmentData),
@@ -119,6 +119,9 @@ const bookingSlice = createSlice({
     },
     setPaymentStatus: (state, action) => {
       state.paymentStatus = action.payload;
+    },
+    setAppointmentDetails: (state, action) => {
+      state.appointmentDetails = action.payload;
     },
     clearBooking: (state) => {
       state.selectedOffice = null;

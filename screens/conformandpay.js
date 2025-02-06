@@ -4,12 +4,11 @@ import { Card, Button, Modal, Portal } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import { confirmAppointment, setPaymentStatus } from "../redux/bookingSlice";
-
 const ConfirmationScreen = () => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
-
-    // Get Redux state
+    const {user}=useSelector((state)=>state.auth);
+    // Get Redux state  
     const { selectedOffice, selectedService, selectedDentist, selectedDate, selectedTime } = useSelector((state) => state.booking);
 
     // State for mock payment
@@ -45,11 +44,13 @@ const ConfirmationScreen = () => {
             time: selectedTime,
             status: "Confirmed",
             paymentStatus: "Paid",
+            userId: user.id,
         };
 
         try {
             await dispatch(confirmAppointment(appointmentData)).unwrap();
             dispatch(setPaymentStatus("completed")); // Update payment status
+            dispatch(setAppointmentDetails(appointmentData));
             Alert.alert("Success", "Your appointment has been confirmed!");
             navigation.navigate("SuccessScreen"); // Navigate to success screen
         } catch (error) {

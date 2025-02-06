@@ -9,6 +9,7 @@ import ServiceSelection from "../screens/serviceselection";
 import DentistSelection from "../screens/dentistselection";
 import DateTimeSelection from "../screens/datetimeselection";
 import ConfirmationScreen from "../screens/conformandpay";
+import SuccessScreen from "../screens/successscreen";
 
 const stack = createStackNavigator();
 
@@ -24,7 +25,8 @@ const AuthStack = () => {
                 <stack.Screen name="DentistSelection" component={DentistSelection} />
                 <stack.Screen name="DateTimeSelection" component={DateTimeSelection} />
                 <stack.Screen name="ConfirmationScreen" component={ConfirmationScreen} />
-
+                <stack.Screen name="SuccessScreen" component={SuccessScreen} />
+                
             </stack.Navigator>
         </NavigationContainer>
     );

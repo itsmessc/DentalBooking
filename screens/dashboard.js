@@ -127,8 +127,8 @@ const Dashboard = () => {
           renderItem={({ item }) => (
             <Card style={styles.card}>
               <Card.Title
-                title={item.service}
-                subtitle={`Dr. ${item.dentist} • ${item.date} • ${item.time}`}
+                title={item.serviceName}
+                subtitle={`Dr. ${item.dentistName} • ${item.date} • ${item.time}`}
                 left={(props) => <Avatar.Icon {...props} icon="tooth" />}
                 right={(props) => (
                   <IconButton 
