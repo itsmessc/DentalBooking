@@ -18,7 +18,7 @@ const DentistSelection = () => {
     // Fetch dentists based on selected service and office
     useEffect(() => {
         if (selectedService && selectedOffice) {
-            dispatch(fetchDentists({ officeId: selectedOffice.id, serviceId: selectedService.name })); // Service name used
+            dispatch(fetchDentists({ officeId: selectedOffice.id, serviceId: selectedService.id })); // Service name used
         }
     }, [selectedService, selectedOffice]);
 
