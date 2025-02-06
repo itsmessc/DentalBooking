@@ -36,7 +36,7 @@ const ServiceSelection = () => {
     // Navigate to booking page if a service is selected
     const proceedToBooking = () => {
         if (selectedService) {
-            navigation.navigate("Booking");
+            navigation.navigate("DentistSelection");
         } else {
             alert("Please select a service to proceed.");
         }

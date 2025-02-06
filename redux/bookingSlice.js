@@ -5,7 +5,7 @@ import Constants from "expo-constants";
 // API Base URL
 const API_URL = Constants.expoConfig.extra.API_URL;
 
-// **Async Thunk: Fetch Hospital Details**
+// **Fetch Hospital Details**
 export const fetchHospitalDetails = createAsyncThunk(
   "booking/fetchHospitalDetails",
   async (hospitalId, { rejectWithValue }) => {
@@ -15,14 +15,38 @@ export const fetchHospitalDetails = createAsyncThunk(
         throw new Error("Failed to fetch hospital details");
       }
       const data = await response.json();
-      return data; // Returns hospital details
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-// **Async Thunk: Confirm Appointment**
+// **Fetch Dentists Based on Selected Service**
+export const fetchDentists = createAsyncThunk(
+  "booking/fetchDentists",
+  async ({ officeId, serviceId }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/dentists`);
+      if (!response.ok) throw new Error("Failed to fetch dentists");
+      
+      const allDentists = await response.json();
+      console.log("All Dentists:", allDentists);
+      // Filter dentists based on selected office and service
+      const filteredDentists = allDentists.filter(dentist => 
+        dentist.officeId === officeId && 
+        dentist.services.includes(serviceId) // Ensure the dentist offers the selected service
+      );
+      console.log("Filtered Dentists:", filteredDentists,serviceId,officeId);
+      return filteredDentists;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+
+// **Confirm Appointment**
 export const confirmAppointment = createAsyncThunk(
   "booking/confirmAppointment",
   async (appointmentData, { rejectWithValue }) => {
@@ -38,7 +62,7 @@ export const confirmAppointment = createAsyncThunk(
       }
 
       const data = await response.json();
-      return data; // Returns confirmed appointment details
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -49,7 +73,8 @@ const initialState = {
   selectedOffice: null,
   selectedService: null,
   selectedDentist: null,
-  hospitalDetails: null, // Added this state to store hospital details
+  hospitalDetails: null,
+  dentists: [],
   appointmentDetails: {},
   isLoading: false,
   error: null,
@@ -71,23 +96,16 @@ const bookingSlice = createSlice({
       state.selectedDentist = action.payload;
       AsyncStorage.setItem("selectedDentist", JSON.stringify(action.payload));
     },
-    setAppointmentDetails: (state, action) => {
-      state.appointmentDetails = action.payload;
-      AsyncStorage.setItem("appointmentDetails", JSON.stringify(action.payload));
-    },
-    setHospitalDetails: (state, action) => {
-      state.hospitalDetails = action.payload; // Storing hospital details in Redux state
-    },
     clearBooking: (state) => {
       state.selectedOffice = null;
       state.selectedService = null;
       state.selectedDentist = null;
       state.hospitalDetails = null;
+      state.dentists = [];
       state.appointmentDetails = {};
       AsyncStorage.removeItem("selectedOffice");
       AsyncStorage.removeItem("selectedService");
       AsyncStorage.removeItem("selectedDentist");
-      AsyncStorage.removeItem("appointmentDetails");
     },
   },
   extraReducers: (builder) => {
@@ -101,6 +119,18 @@ const bookingSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(fetchHospitalDetails.rejected, (state, action) => {
+        state.error = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(fetchDentists.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchDentists.fulfilled, (state, action) => {
+        state.dentists = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(fetchDentists.rejected, (state, action) => {
         state.error = action.payload;
         state.isLoading = false;
       })
@@ -121,13 +151,5 @@ const bookingSlice = createSlice({
 });
 
 // **Export Actions & Reducer**
-export const {
-  setSelectedOffice,
-  setSelectedService,
-  setSelectedDentist,
-  setAppointmentDetails,
-  setHospitalDetails, // Now available
-  clearBooking,
-} = bookingSlice.actions;
-
+export const { setSelectedOffice, setSelectedService, setSelectedDentist, clearBooking } = bookingSlice.actions;
 export default bookingSlice.reducer;
