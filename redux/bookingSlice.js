@@ -79,6 +79,8 @@ const initialState = {
   hospitalDetails: null,
   dentists: [],
   appointmentDetails: {},
+  selectedDate: null, 
+  selectedTime: null,
   isLoading: false,
   error: null,
 };
@@ -101,6 +103,14 @@ const bookingSlice = createSlice({
     },
     setHospitalDetails: (state, action) => {
       state.hospitalDetails = action.payload;
+    },
+    setSelectedDate: (state, action) => {
+      state.selectedDate = action.payload;
+      AsyncStorage.setItem("selectedDate", action.payload);
+    },
+    setSelectedTime: (state, action) => {
+      state.selectedTime = action.payload;
+      AsyncStorage.setItem("selectedTime", action.payload);
     },
     clearBooking: (state) => {
       state.selectedOffice = null;
@@ -157,5 +167,5 @@ const bookingSlice = createSlice({
 });
 
 // **Export Actions & Reducer**
-export const { setSelectedOffice, setSelectedService, setSelectedDentist, setHospitalDetails, clearBooking } = bookingSlice.actions;
+export const { setSelectedOffice, setSelectedService, setSelectedDentist, setHospitalDetails, clearBooking ,setSelectedDate,setSelectedTime} = bookingSlice.actions;
 export default bookingSlice.reducer;

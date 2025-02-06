@@ -7,6 +7,7 @@ import Dashboard from "../screens/dashboard";
 import LocationSelection from "../screens/locationselection";
 import ServiceSelection from "../screens/serviceselection";
 import DentistSelection from "../screens/dentistselection";
+import DateTimeSelection from "../screens/datetimeselection";
 
 const stack = createStackNavigator();
 
@@ -20,6 +21,7 @@ const AuthStack = () => {
                 <stack.Screen name="LocationSelection" component={LocationSelection} />
                 <stack.Screen name="ServiceSelection" component={ServiceSelection} />
                 <stack.Screen name="DentistSelection" component={DentistSelection} />
+                <stack.Screen name="DateTimeSelection" component={DateTimeSelection} />
 
             </stack.Navigator>
         </NavigationContainer>

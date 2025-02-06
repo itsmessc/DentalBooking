@@ -30,7 +30,7 @@ const DentistSelection = () => {
     // Proceed to Booking
     const proceedToBooking = () => {
         if (selectedDentist) {
-            navigation.navigate("PickDateTime"); // Navigate to date/time selection
+            navigation.navigate("DateTimeSelection"); // Navigate to date/time selection
         } else {
             alert("Please select a dentist to proceed.");
         }
