@@ -10,6 +10,7 @@ import DentistSelection from "../screens/dentistselection";
 import DateTimeSelection from "../screens/datetimeselection";
 import ConfirmationScreen from "../screens/conformandpay";
 import SuccessScreen from "../screens/successscreen";
+import SplashScreen from "../screens/splashscreen";
 
 const stack = createStackNavigator();
 
@@ -17,6 +18,7 @@ const AuthStack = () => {
     return (
         <NavigationContainer>
             <stack.Navigator screenOptions={{ headerShown: false }}>
+                <stack.Screen name="SplashScreen" component={SplashScreen} />
                 <stack.Screen name="Login" component={Login} />
                 <stack.Screen name="Signup" component={Signup} />
                 <stack.Screen name="Dashboard" component={Dashboard} />
