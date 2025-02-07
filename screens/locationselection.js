@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,59 +7,55 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
-  Alert,
 } from "react-native";
-import * as Location from "expo-location"; // Import Expo Location API
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { clearBooking, setSelectedOffice } from "../redux/bookingSlice";
-import { fetchDentalOffices } from "../redux/locationSlice"; // New Redux slice for fetching locations
+import { setSelectedOffice } from "../redux/bookingSlice";
+import { fetchDentalOffices } from "../redux/locationSlice"; // Fetching locations
 import Constants from "expo-constants";
 
 // API Base URL
 const API_URL = Constants.expoConfig.extra.API_URL;
 
-// Haversine Formula for Distance Calculation
-const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Radius of Earth in km
-  const toRad = (angle) => (angle * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
-};
-
 const LocationSelection = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  // Get data from Redux
-  const {
-    dentalOffices,
-    loading,
-    error,
-    userLocation,
-    postalCode,
-  } = useSelector((state) => state.location);
+  // Redux State
+  const { dentalOffices, loading, error, postalCode } = useSelector((state) => state.location);
 
- 
-  
-  // Fetch User's Location and Dental Offices
+  // Local State for Filtering
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredOffices, setFilteredOffices] = useState([]);
+
+  // Fetch Dental Offices
   useEffect(() => {
     dispatch(fetchDentalOffices());
   }, [dispatch]);
 
+  // Update the filtered list when data changes
+  useEffect(() => {
+    setFilteredOffices(dentalOffices);
+  }, [dentalOffices]);
+
   // Handle Search Input
   const handleSearch = (text) => {
-    dispatch({ type: "location/filterOffices", payload: text });
+    setSearchQuery(text);
+
+    if (text.trim() === "") {
+      setFilteredOffices(dentalOffices); // Reset when search is cleared
+    } else {
+      const filtered = dentalOffices.filter((office) =>
+        office.name.toLowerCase().includes(text.toLowerCase()) ||
+        office.city.toLowerCase().includes(text.toLowerCase()) ||
+        office.zip.toString().includes(text)
+      );
+      setFilteredOffices(filtered);
+    }
   };
 
-  // Select Dental Office
+  // Select a Dental Office
   const selectOffice = (office) => {
     dispatch(setSelectedOffice(office));
     navigation.navigate("ServiceSelection");
@@ -67,9 +63,9 @@ const LocationSelection = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
+      {/* Header */}
       <View style={styles.header}>
-        <Avatar.Icon size={50} icon="map-marker" style={styles.avatar} />
+        <Avatar.Icon size={50} icon="map-marker" style={styles.avatarIcon} color="#007AFF" />
         <View>
           <Text style={styles.title}>Your Location</Text>
           <Text style={styles.subtitle}>Postal Code: {postalCode || "Unknown"}</Text>
@@ -80,29 +76,47 @@ const LocationSelection = () => {
       <TextInput
         style={styles.searchBar}
         placeholder="Search by city, ZIP, or address..."
+        value={searchQuery}
         onChangeText={handleSearch}
       />
-      <Text style={styles.subtitle1}>Nearest Hospitals</Text>
+
+      <Text style={styles.sectionTitle}>Nearest Hospitals</Text>
 
       {/* Loading & Error Handling */}
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
-      ) : dentalOffices.length === 0 ? (
+      ) : filteredOffices.length === 0 ? (
         <Text style={styles.noResults}>No offices found.</Text>
       ) : (
         <FlatList
-          data={dentalOffices}
+          data={filteredOffices}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: 20 }}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => selectOffice(item)}>
               <Card style={styles.card}>
                 <Card.Title
                   title={item.name}
                   subtitle={`${item.address} - ${item.city}, ${item.zip} • ${item.distance.toFixed(1)} km\n⭐ ${item.rating ? item.rating.toFixed(1) : "N/A"} / 5`}
-                  left={(props) => <Avatar.Icon {...props} icon="hospital-building" />}
-                  right={(props) => <IconButton {...props} icon="arrow-right-circle" color="blue" />}
+                  left={(props) => (
+                    <Avatar.Icon
+                      {...props}
+                      icon="hospital-building"
+                      style={styles.officeAvatar}
+                      color="#007AFF"
+                      backgroundColor="#E6F0FF"
+                    />
+                  )}
+                  right={(props) => (
+                    <IconButton
+                      {...props}
+                      icon="chevron-right"
+                      color="#007AFF"
+                      size={28}
+                    />
+                  )}
                 />
               </Card>
             </TouchableOpacity>
@@ -115,6 +129,8 @@ const LocationSelection = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
+  
+  // Header Styles
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -123,22 +139,46 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  avatar: { backgroundColor: "white", marginRight: 10 },
-  title: { fontSize: 18, fontWeight: "bold", color: "white" },
+  avatarIcon: { backgroundColor: "white", marginRight: 10 },
+  title: { fontSize: 20, fontWeight: "bold", color: "white" },
   subtitle: { fontSize: 14, color: "white" },
-  subtitle1: { fontSize: 14, color: "black", marginLeft: 16 },
+
+  // Search Bar
   searchBar: {
     margin: 15,
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#ddd",
+    fontSize: 16,
   },
+
+  // Section Title
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 16,
+    marginBottom: 10,
+    color: "#333",
+  },
+
+  // Loader & Error Text
   loader: { marginTop: 30 },
   errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 10 },
   noResults: { fontSize: 16, fontStyle: "italic", textAlign: "center", color: "gray", marginTop: 20 },
-  card: { marginHorizontal: 15, marginVertical: 10, borderRadius: 10, elevation: 3 },
+
+  // Cards
+  card: {
+    marginHorizontal: 15,
+    marginVertical: 10,
+    borderRadius: 10,
+    elevation: 3,
+    backgroundColor: "white",
+  },
+  officeAvatar: {
+    backgroundColor: "#E6F0FF", // Fixes purple background
+  },
 });
 
 export default LocationSelection;
