@@ -22,7 +22,7 @@ const ServiceSelection = () => {
         if (selectedOffice && !hospitalDetails) {
             dispatch(fetchHospitalDetails(selectedOffice.id));
         }
-    }, [selectedOffice]);
+    }, [selectedOffice,dispatch]);
 
     // Generate the map URL
     const mapUrl = hospitalDetails

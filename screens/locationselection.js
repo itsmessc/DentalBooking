@@ -47,9 +47,7 @@ const LocationSelection = () => {
     postalCode,
   } = useSelector((state) => state.location);
 
-  useEffect(() => {
-    dispatch(clearBooking());
-    }, [navigation]);
+ 
   
   // Fetch User's Location and Dental Offices
   useEffect(() => {

@@ -96,14 +96,25 @@ const bookingSlice = createSlice({
   reducers: {
     setSelectedOffice: (state, action) => {
       state.selectedOffice = action.payload;
+      state.hospitalDetails = action.payload;
+      state.dentists = [];
+      state.selectedDentist = null;
+      state.selectedService = null;
+      state.selectedDate = null;
+      state.selectedTime = null;
       AsyncStorage.setItem("selectedOffice", JSON.stringify(action.payload));
     },
     setSelectedService: (state, action) => {
       state.selectedService = action.payload;
+      state.selectedDentist = null;
+      state.selectedDate = null;
+      state.selectedTime = null;
       AsyncStorage.setItem("selectedService", JSON.stringify(action.payload));
     },
     setSelectedDentist: (state, action) => {
       state.selectedDentist = action.payload;
+      state.selectedDate = null;
+      state.selectedTime = null;
       AsyncStorage.setItem("selectedDentist", JSON.stringify(action.payload));
     },
     setHospitalDetails: (state, action) => {
