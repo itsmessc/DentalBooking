@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector,useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { clearBooking } from "../redux/bookingSlice";
+import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons"; // Icons for UI
 
 const SuccessScreen = () => {
   const navigation = useNavigation();
@@ -18,28 +19,48 @@ const SuccessScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Booking Confirmed</Text>
-      <Text style={styles.subHeader}>Your appointment has been successfully booked!</Text>
-
-      <View style={styles.detailsContainer}>
-        <Text style={styles.detailText}>
-          <Text style={styles.label}>Location:</Text> {appointmentDetails?.officeName}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.label}>Service:</Text> {appointmentDetails?.serviceName}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.label}>Dentist:</Text> {appointmentDetails?.dentistName}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.label}>Date:</Text> {appointmentDetails?.date}
-        </Text>
-        <Text style={styles.detailText}>
-          <Text style={styles.label}>Time:</Text> {appointmentDetails?.time}
-        </Text>
+      {/* Success Icon */}
+      <View style={styles.successIconContainer}>
+        <MaterialIcons name="check-circle" size={90} color="#28A745" />
       </View>
 
-      <Button title="Back to Home" onPress={handleBackToHome} color="#28A745" />
+      <Text style={styles.header}>Booking Confirmed!</Text>
+      <Text style={styles.subHeader}>Your appointment has been successfully booked.</Text>
+
+      {/* Appointment Details Card */}
+      <View style={styles.detailsContainer}>
+        <View style={styles.detailRow}>
+          <MaterialIcons name="location-on" size={22} color="#007AFF" />
+          <Text style={styles.detailText}>{appointmentDetails?.officeName}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <FontAwesome5 name="tooth" size={20} color="#007AFF" />
+          <Text style={styles.detailText}>{appointmentDetails?.serviceName}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <MaterialIcons name="person" size={22} color="#007AFF" />
+          <Text style={styles.detailText}>{appointmentDetails?.dentistName}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <MaterialIcons name="event" size={22} color="#007AFF" />
+          <Text style={styles.detailText}>{appointmentDetails?.date}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <MaterialIcons name="schedule" size={22} color="#007AFF" />
+          <Text style={styles.detailText}>{appointmentDetails?.time}</Text>
+        </View>
+      </View>
+
+      {/* Back to Home Button */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.homeButton} onPress={handleBackToHome}>
+          <Text style={styles.homeButtonText}>Back to Home</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -52,17 +73,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // Success Icon
+  successIconContainer: {
+    marginBottom: 20,
+  },
+
+  // Headers
   header: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 10,
+    color: "#333",
   },
   subHeader: {
-    fontSize: 18,
+    fontSize: 16,
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 25,
+    color: "#555",
   },
+
+  // Appointment Details Card
   detailsContainer: {
     backgroundColor: "white",
     padding: 20,
@@ -71,12 +103,34 @@ const styles = StyleSheet.create({
     elevation: 3,
     width: "100%",
   },
-  label: {
-    fontWeight: "bold",
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
   detailText: {
     fontSize: 16,
-    marginBottom: 10,
+    color: "#555",
+    marginLeft: 10, // Space between icon & text
+  },
+
+  // Button Container
+  buttonContainer: {
+    position: "absolute",
+    bottom: 20,
+    width: "100%",
+  },
+  homeButton: {
+    backgroundColor: "#28A745",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginHorizontal: 20,
+  },
+  homeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
 });
 
