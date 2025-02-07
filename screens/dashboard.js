@@ -36,7 +36,6 @@ const Dashboard = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // Fetch Appointments
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -56,26 +55,22 @@ const Dashboard = () => {
     }
   }, [user, token]);
 
-  // Fetch data on screen focus
   useEffect(() => {
     if (isFocused) fetchAppointments();
   }, [isFocused, fetchAppointments]);
 
-  // Pull-to-refresh Function
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAppointments();
     setRefreshing(false);
   }, [fetchAppointments]);
 
-  // Handle Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
     dispatch(logout());
     navigation.replace("Login");
   };
 
-  // Handle Appointment Cancellation
   const cancelAppointment = async (appointmentId) => {
     try {
       const response = await fetch(`${API_URL}/appointments/cancel/${appointmentId}`, {
@@ -93,13 +88,11 @@ const Dashboard = () => {
     }
   };
 
-  // Open Google Maps or other maps
   const openMap = (lat, lng) => {
     const url = `https://www.google.com/maps/?q=${lat},${lng}`;
     Linking.openURL(url);
   };
 
-  // Handle Appointment Details Modal
   const handleAppointmentDetails = (appointment) => {
     setSelectedAppointment(appointment);
     setModalVisible(true);
@@ -114,22 +107,15 @@ const Dashboard = () => {
           size={50}
           label={user?.name ? user.name[0].toUpperCase() : "U"}
           style={styles.avatar}
+          color="#007AFF"
         />
         <View>
           <Text style={styles.title}>Hi, {user?.name || "User"} 👋</Text>
           <Text style={styles.subtitle}>Your upcoming appointments</Text>
         </View>
-        <IconButton
-          icon="logout"
-          size={24}
-          color="white"
-          iconColor="white"
-          style={{ marginLeft: "auto" }}
-          onPress={handleLogout}
-        />
+        <IconButton icon="logout" size={24} iconColor="white" onPress={handleLogout} style={styles.IconButton} />
       </View>
 
-      {/* Appointments List */}
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
       ) : error ? (
@@ -141,18 +127,27 @@ const Dashboard = () => {
           data={appointments}
           keyExtractor={(item) => item.id.toString()}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ paddingBottom: 10 }} // Removes unwanted opacity
           renderItem={({ item }) => (
             <Card style={styles.card}>
               <Card.Title
                 title={item.serviceName}
                 subtitle={`Dr. ${item.dentistName} • ${item.date} • ${item.time}`}
-                left={(props) => <Avatar.Icon {...props} icon="tooth" />}
+                left={(props) => (
+                  <Avatar.Icon 
+                    {...props} 
+                    icon="tooth" 
+                    style={styles.avatarIcon} // Fixes purple background
+                    color="#007AFF" 
+                    backgroundColor="#E6F0FF"
+                  />
+                )}
                 right={(props) => (
-                  <IconButton
-                    {...props}
-                    icon="eye"
-                    color="blue"
-                    onPress={() => handleAppointmentDetails(item)} 
+                  <IconButton 
+                    {...props} 
+                    icon="eye" 
+                    color="#007AFF" 
+                    onPress={() => handleAppointmentDetails(item)}
                   />
                 )}
               />
@@ -161,63 +156,34 @@ const Dashboard = () => {
         />
       )}
 
-      <Button
-        mode="contained"
-        onPress={() => navigation.navigate("LocationSelection")}
-        style={styles.button}
-      >
+      <Button mode="contained" onPress={() => navigation.navigate("LocationSelection")} style={styles.button}>
         + Book an Appointment
       </Button>
 
-      {/* Appointment Details Modal */}
-      <Modal
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-        animationType="slide"
-      >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Appointment Details</Text>
+      {/* Popup Modal */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Appointment Details</Text>
 
-          <Text style={styles.detailText}>
-            <Text style={styles.label}>Location: </Text>{selectedAppointment?.officeName}
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.label}>Service: </Text>{selectedAppointment?.serviceName}
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.label}>Dentist: </Text>{selectedAppointment?.dentistName}
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.label}>Date: </Text>{selectedAppointment?.date}
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.label}>Time: </Text>{selectedAppointment?.time}
-          </Text>
+            <Text style={styles.detailText}><Text style={styles.label}>Location: </Text>{selectedAppointment?.officeName}</Text>
+            <Text style={styles.detailText}><Text style={styles.label}>Service: </Text>{selectedAppointment?.serviceName}</Text>
+            <Text style={styles.detailText}><Text style={styles.label}>Dentist: </Text>{selectedAppointment?.dentistName}</Text>
+            <Text style={styles.detailText}><Text style={styles.label}>Date: </Text>{selectedAppointment?.date}</Text>
+            <Text style={styles.detailText}><Text style={styles.label}>Time: </Text>{selectedAppointment?.time}</Text>
 
-          {/* Location Button */}
-          <Button
-            mode="contained"
-            onPress={() => openMap(selectedAppointment?.location.lat, selectedAppointment?.location.lng)}
-            style={styles.mapButton}
-          >
-            Open in Maps
-          </Button>
+            <Button mode="contained" onPress={() => openMap(selectedAppointment?.location.lat, selectedAppointment?.location.lng)} style={styles.mapButton}>
+              Open in Maps
+            </Button>
 
-          <Button
-            mode="contained"
-            onPress={() => cancelAppointment(selectedAppointment?.id)}
-            style={styles.cancelButton}
-          >
-            Cancel Appointment
-          </Button>
+            <Button mode="contained" onPress={() => cancelAppointment(selectedAppointment?.id)} style={styles.cancelButton}>
+              Cancel Appointment
+            </Button>
 
-          <Button
-            mode="contained"
-            onPress={() => setModalVisible(false)}
-            style={styles.closeButton}
-          >
-            Close
-          </Button>
+            <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              Close
+            </Button>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -226,31 +192,21 @@ const Dashboard = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F5F5F5" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#007AFF",
-    padding: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
+  header: { flexDirection: "row", alignItems: "center", backgroundColor: "#007AFF", padding: 20 ,borderBottomLeftRadius: 20, borderBottomRightRadius: 20},  
   avatar: { marginRight: 10, backgroundColor: "white" },
+  avatarIcon: { backgroundColor: "#E6F0FF" }, // Fix purple background
   title: { fontSize: 20, fontWeight: "bold", color: "white" },
   subtitle: { fontSize: 14, color: "white" },
   loader: { marginTop: 30 },
-  errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 10 },
-  noAppointments: { fontSize: 16, fontStyle: "italic", textAlign: "center", color: "gray", marginTop: 20 },
-  card: { marginHorizontal: 15, marginVertical: 10, borderRadius: 10, elevation: 3 },
-  button: { margin: 20, padding: 10, borderRadius: 10, backgroundColor: "#007AFF" },
-  detailsButton: { marginTop: 10 },
-  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "white" },
-  modalTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
-  detailText: { fontSize: 16, marginBottom: 10 },
-  label: { fontWeight: "bold" },
-  mapButton: { marginTop: 20, backgroundColor: "#007AFF" },
+  card: { backgroundColor: "white", margin:5, borderRadius: 10, elevation: 3 },
+  button: { margin: 20, backgroundColor: "#007AFF" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
+  modalContainer: { width: "85%", backgroundColor: "white", padding: 20, borderRadius: 10 },
+  modalTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 10 },
+  mapButton: { marginTop: 10, backgroundColor: "#007AFF" },
   cancelButton: { marginTop: 10, backgroundColor: "#FF0000" },
   closeButton: { marginTop: 10, backgroundColor: "#28A745" },
+  IconButton:{ marginLeft: "auto" },
 });
 
 export default Dashboard;
-
