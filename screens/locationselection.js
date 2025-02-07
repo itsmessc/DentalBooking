@@ -13,7 +13,7 @@ import * as Location from "expo-location"; // Import Expo Location API
 import { Avatar, Card, IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedOffice } from "../redux/bookingSlice";
+import { clearBooking, setSelectedOffice } from "../redux/bookingSlice";
 import { fetchDentalOffices } from "../redux/locationSlice"; // New Redux slice for fetching locations
 import Constants from "expo-constants";
 
@@ -47,6 +47,10 @@ const LocationSelection = () => {
     postalCode,
   } = useSelector((state) => state.location);
 
+  useEffect(() => {
+    dispatch(clearBooking());
+    }, [navigation]);
+  
   // Fetch User's Location and Dental Offices
   useEffect(() => {
     dispatch(fetchDentalOffices());

@@ -67,8 +67,8 @@ export const confirmAppointment = createAsyncThunk(
       if (!response.ok) {
         throw new Error("Failed to confirm appointment");
       }
-
       const data = await response.json();
+
       return data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -121,6 +121,7 @@ const bookingSlice = createSlice({
       state.paymentStatus = action.payload;
     },
     setAppointmentDetails: (state, action) => {
+      console.log("📅 Appointment Details:", action.payload);
       state.appointmentDetails = action.payload;
     },
     clearBooking: (state) => {
@@ -197,5 +198,6 @@ export const {
   setSelectedTime,
   setPaymentStatus,
   clearBooking,
+  setAppointmentDetails
 } = bookingSlice.actions;
 export default bookingSlice.reducer;

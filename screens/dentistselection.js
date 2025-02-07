@@ -30,6 +30,7 @@ const DentistSelection = () => {
     // Proceed to Booking
     const proceedToBooking = () => {
         if (selectedDentist) {
+            dispatch(fetchDentists({ officeId: selectedOffice.id, serviceId: selectedService.id }));
             navigation.navigate("DateTimeSelection"); // Navigate to date/time selection
         } else {
             alert("Please select a dentist to proceed.");

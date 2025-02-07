@@ -1,16 +1,19 @@
 import React from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
+import { clearBooking } from "../redux/bookingSlice";
 
 const SuccessScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   // Get Redux state for appointment details
   const { appointmentDetails } = useSelector((state) => state.booking);
 
   const handleBackToHome = () => {
-    navigation.navigate("Home"); // Adjust this as per your navigation setup
+    dispatch(clearBooking()); // Clear booking details
+    navigation.navigate("Dashboard"); // Adjust this as per your navigation setup
   };
 
   return (

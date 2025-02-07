@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { Card, Button, Modal, Portal } from "react-native-paper";
+import { Card, Button, Modal, Portal, ActivityIndicator } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
-import { confirmAppointment, setPaymentStatus } from "../redux/bookingSlice";
+import { confirmAppointment, setPaymentStatus,setAppointmentDetails } from "../redux/bookingSlice";
 const ConfirmationScreen = () => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const {user}=useSelector((state)=>state.auth);
     // Get Redux state  
-    const { selectedOffice, selectedService, selectedDentist, selectedDate, selectedTime } = useSelector((state) => state.booking);
-
+    const { selectedOffice, selectedService, selectedDentist, selectedDate, selectedTime,hospitalDetails } = useSelector((state) => state.booking);
+    const [lodaing,setLoading]=useState(false);
     // State for mock payment
     const [visible, setVisible] = useState(false);
 
@@ -30,33 +30,43 @@ const ConfirmationScreen = () => {
 
     // Handle mock payment confirmation
     const handleConfirmPayment = async () => {
+        setLoading(true);
+        const appointmentData = {
+          officeId: selectedOffice.id,
+          officeName: selectedOffice.name,
+          serviceId: selectedService.id,
+          serviceName: selectedService.name,
+          servicePrice: selectedService.price, // Store price
+          dentistId: selectedDentist.id,
+          dentistName: selectedDentist.name,
+          date: selectedDate,
+          time: selectedTime,
+          status: "Confirmed",
+          paymentStatus: "Paid",
+          userId: user.id,
+          location: hospitalDetails.location,
+        };
+      
+        try {
+          console.log("Booking Appointment with data:", appointmentData);
+          const response = await dispatch(confirmAppointment(appointmentData)).unwrap();
+          console.log("Appointment successfully booked:", response);
+          dispatch(setPaymentStatus("completed")); // Update payment status
+          dispatch(setAppointmentDetails(appointmentData));
+          Alert.alert("Success", "Your appointment has been confirmed!");
+          navigation.navigate("SuccessScreen");
+        } catch (error) {
+          Alert.alert("Error", "Failed to confirm appointment. Please try again.");
+          console.error("Error during appointment confirmation:", error);
+          
+        }
+        finally{
+            setLoading(false);
         setVisible(false); // Close modal
 
-        const appointmentData = {
-            officeId: selectedOffice.id,
-            officeName: selectedOffice.name,
-            serviceId: selectedService.id,
-            serviceName: selectedService.name,
-            servicePrice: selectedService.price, // Store price
-            dentistId: selectedDentist.id,
-            dentistName: selectedDentist.name,
-            date: selectedDate,
-            time: selectedTime,
-            status: "Confirmed",
-            paymentStatus: "Paid",
-            userId: user.id,
-        };
-
-        try {
-            await dispatch(confirmAppointment(appointmentData)).unwrap();
-            dispatch(setPaymentStatus("completed")); // Update payment status
-            dispatch(setAppointmentDetails(appointmentData));
-            Alert.alert("Success", "Your appointment has been confirmed!");
-            navigation.navigate("SuccessScreen"); // Navigate to success screen
-        } catch (error) {
-            Alert.alert("Error", "Failed to confirm appointment. Please try again.");
         }
-    };
+      };
+      
 
     return (
         <View style={styles.container}>
@@ -96,9 +106,9 @@ const ConfirmationScreen = () => {
                     <Text style={styles.modalTitle}>Mock Payment Gateway</Text>
                     <Text style={styles.modalText}>Total Amount: ₹{selectedService?.price}</Text>
 
-                    <TouchableOpacity style={styles.payNowButton} onPress={handleConfirmPayment}>
+                    {lodaing ? (<ActivityIndicator size="large" color="#007AFF" />) : (<TouchableOpacity style={styles.payNowButton} onPress={handleConfirmPayment}>
                         <Text style={styles.payNowButtonText}>Pay Now</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity>)}
                 </Modal>
             </Portal>
         </View>

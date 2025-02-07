@@ -1,6 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { 
-  View, StyleSheet, Text, FlatList, ActivityIndicator, Alert, RefreshControl, StatusBar, SafeAreaView 
+import {
+  View,
+  StyleSheet,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  StatusBar,
+  SafeAreaView,
+  Modal,
+  TouchableOpacity
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/authSlice";
@@ -8,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { Button, Card, Avatar, IconButton } from "react-native-paper";
 import Constants from "expo-constants";
+import * as Linking from 'expo-linking';
 
 // API Base URL
 const API_URL = Constants.expoConfig.extra.API_URL;
@@ -22,14 +33,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   // Fetch Appointments
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching Appointments for User:", user);
-
       const response = await fetch(`${API_URL}/appointments/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -37,11 +48,8 @@ const Dashboard = () => {
       if (!response.ok) throw new Error("Failed to fetch appointments");
 
       const data = await response.json();
-      console.log("Appointments Data:", JSON.stringify(data, null, 2));
-
       setAppointments(data);
     } catch (err) {
-      console.error("Error fetching appointments:", err);
       setError("No Appointments Found");
     } finally {
       setLoading(false);
@@ -53,7 +61,7 @@ const Dashboard = () => {
     if (isFocused) fetchAppointments();
   }, [isFocused, fetchAppointments]);
 
-  //  Pull-to-refresh Function
+  // Pull-to-refresh Function
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAppointments();
@@ -67,10 +75,9 @@ const Dashboard = () => {
     navigation.replace("Login");
   };
 
-  //  Handle Appointment Cancellation
+  // Handle Appointment Cancellation
   const cancelAppointment = async (appointmentId) => {
     try {
-      const token = await AsyncStorage.getItem("token");
       const response = await fetch(`${API_URL}/appointments/cancel/${appointmentId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -79,34 +86,46 @@ const Dashboard = () => {
       if (!response.ok) throw new Error("Failed to cancel appointment");
 
       Alert.alert("Success", "Appointment canceled successfully");
+      setModalVisible(false);
       fetchAppointments();
     } catch (err) {
-      console.error("Error canceling appointment:", err);
       Alert.alert("Error", "Failed to cancel the appointment. Please try again.");
     }
   };
 
+  // Open Google Maps or other maps
+  const openMap = (lat, lng) => {
+    const url = `https://www.google.com/maps/?q=${lat},${lng}`;
+    Linking.openURL(url);
+  };
+
+  // Handle Appointment Details Modal
+  const handleAppointmentDetails = (appointment) => {
+    setSelectedAppointment(appointment);
+    setModalVisible(true);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Status Bar (Black) */}
       <StatusBar backgroundColor="#007AFF" barStyle="light-content" />
 
-      {/* Header Section */}
       <View style={styles.header}>
-        <Avatar.Text 
-          size={50} 
-          label={user?.name ? user.name[0].toUpperCase() : "U"} 
-          style={styles.avatar} 
+        <Avatar.Text
+          size={50}
+          label={user?.name ? user.name[0].toUpperCase() : "U"}
+          style={styles.avatar}
         />
         <View>
           <Text style={styles.title}>Hi, {user?.name || "User"} 👋</Text>
           <Text style={styles.subtitle}>Your upcoming appointments</Text>
         </View>
-        <IconButton 
-          icon="logout" 
-          size={24} 
-          color="white" 
-          onPress={handleLogout} 
+        <IconButton
+          icon="logout"
+          size={24}
+          color="white"
+          iconColor="white"
+          style={{ marginLeft: "auto" }}
+          onPress={handleLogout}
         />
       </View>
 
@@ -121,9 +140,7 @@ const Dashboard = () => {
         <FlatList
           data={appointments}
           keyExtractor={(item) => item.id.toString()}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
             <Card style={styles.card}>
               <Card.Title
@@ -131,11 +148,11 @@ const Dashboard = () => {
                 subtitle={`Dr. ${item.dentistName} • ${item.date} • ${item.time}`}
                 left={(props) => <Avatar.Icon {...props} icon="tooth" />}
                 right={(props) => (
-                  <IconButton 
-                    {...props} 
-                    icon="close-circle" 
-                    color="red" 
-                    onPress={() => cancelAppointment(item.id)} 
+                  <IconButton
+                    {...props}
+                    icon="eye"
+                    color="blue"
+                    onPress={() => handleAppointmentDetails(item)} 
                   />
                 )}
               />
@@ -144,7 +161,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Action Buttons */}
       <Button
         mode="contained"
         onPress={() => navigation.navigate("LocationSelection")}
@@ -152,6 +168,58 @@ const Dashboard = () => {
       >
         + Book an Appointment
       </Button>
+
+      {/* Appointment Details Modal */}
+      <Modal
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Appointment Details</Text>
+
+          <Text style={styles.detailText}>
+            <Text style={styles.label}>Location: </Text>{selectedAppointment?.officeName}
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.label}>Service: </Text>{selectedAppointment?.serviceName}
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.label}>Dentist: </Text>{selectedAppointment?.dentistName}
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.label}>Date: </Text>{selectedAppointment?.date}
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.label}>Time: </Text>{selectedAppointment?.time}
+          </Text>
+
+          {/* Location Button */}
+          <Button
+            mode="contained"
+            onPress={() => openMap(selectedAppointment?.location.lat, selectedAppointment?.location.lng)}
+            style={styles.mapButton}
+          >
+            Open in Maps
+          </Button>
+
+          <Button
+            mode="contained"
+            onPress={() => cancelAppointment(selectedAppointment?.id)}
+            style={styles.cancelButton}
+          >
+            Cancel Appointment
+          </Button>
+
+          <Button
+            mode="contained"
+            onPress={() => setModalVisible(false)}
+            style={styles.closeButton}
+          >
+            Close
+          </Button>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -174,6 +242,15 @@ const styles = StyleSheet.create({
   noAppointments: { fontSize: 16, fontStyle: "italic", textAlign: "center", color: "gray", marginTop: 20 },
   card: { marginHorizontal: 15, marginVertical: 10, borderRadius: 10, elevation: 3 },
   button: { margin: 20, padding: 10, borderRadius: 10, backgroundColor: "#007AFF" },
+  detailsButton: { marginTop: 10 },
+  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "white" },
+  modalTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
+  detailText: { fontSize: 16, marginBottom: 10 },
+  label: { fontWeight: "bold" },
+  mapButton: { marginTop: 20, backgroundColor: "#007AFF" },
+  cancelButton: { marginTop: 10, backgroundColor: "#FF0000" },
+  closeButton: { marginTop: 10, backgroundColor: "#28A745" },
 });
 
 export default Dashboard;
+
