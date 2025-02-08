@@ -21,7 +21,7 @@ const SplashScreen = () => {
       const token = await AsyncStorage.getItem("token");
       setTimeout(() => {
         if (token) {
-          navigation.replace("Dashboard"); // Navigate to Dashboard if token exists
+          navigation.replace("BottomNavigation"); // Navigate to Dashboard if token exists
         } else {
           navigation.replace("Login"); // Navigate to Login if no token
         }
