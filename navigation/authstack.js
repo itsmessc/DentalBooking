@@ -11,6 +11,8 @@ import DateTimeSelection from "../screens/datetimeselection";
 import ConfirmationScreen from "../screens/conformandpay";
 import SuccessScreen from "../screens/successscreen";
 import SplashScreen from "../screens/splashscreen";
+import BottomNavigation from "./bottomnavigation"
+import BottomNav from "./bottomnavigation";
 
 const stack = createStackNavigator();
 
@@ -21,7 +23,7 @@ const AuthStack = () => {
                 <stack.Screen name="SplashScreen" component={SplashScreen} />
                 <stack.Screen name="Login" component={Login} />
                 <stack.Screen name="Signup" component={Signup} />
-                <stack.Screen name="Dashboard" component={Dashboard} />
+                <stack.Screen name="BottomNavigation" component={BottomNav} />
                 <stack.Screen name="LocationSelection" component={LocationSelection} />
                 <stack.Screen name="ServiceSelection" component={ServiceSelection} />
                 <stack.Screen name="DentistSelection" component={DentistSelection} />
