@@ -84,6 +84,7 @@ const initialState = {
   selectedTime: null,
   hospitalDetails: null,
   dentists: [],
+  isreschedule: false,
   appointmentDetails: {},
   paymentStatus: "pending", // 'pending', 'completed', 'failed'
   isLoading: false,
@@ -116,6 +117,10 @@ const bookingSlice = createSlice({
       state.selectedDate = null;
       state.selectedTime = null;
       AsyncStorage.setItem("selectedDentist", JSON.stringify(action.payload));
+    },
+    clearDateandTime: (state) => {
+      state.selectedDate = null;
+      state.selectedTime = null;
     },
     setHospitalDetails: (state, action) => {
       state.hospitalDetails = action.payload;
@@ -151,6 +156,9 @@ const bookingSlice = createSlice({
       AsyncStorage.removeItem("selectedDate");
       AsyncStorage.removeItem("selectedTime");
     },
+    setreschedule: (state, action) => {
+      state.isreschedule = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -209,6 +217,7 @@ export const {
   setSelectedTime,
   setPaymentStatus,
   clearBooking,
-  setAppointmentDetails
+  setAppointmentDetails,
+  clearDateandTime
 } = bookingSlice.actions;
 export default bookingSlice.reducer;
