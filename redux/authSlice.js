@@ -88,7 +88,7 @@ export const loginUser = (email, password, navigation) => async (dispatch) => {
     if (!response.ok) throw new Error(data.error || "Invalid email or password.");
 
     dispatch(loginSuccess(data));
-    navigation.replace("Dashboard");
+    navigation.replace("BottomNavigation");
   } catch (error) {
     console.error("Login Error:", error.message);
     dispatch(apiFail(error.message));
@@ -109,7 +109,7 @@ export const signupUser = (name, email, phone, password, navigation) => async (d
     if (!response.ok) throw new Error(data.error || "Signup failed");
 
     dispatch(loginSuccess(data));
-    navigation.replace("Dashboard");
+    navigation.replace("BottomNavigation");
   } catch (error) {
     dispatch(apiFail(error.message));
   }

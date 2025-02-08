@@ -25,7 +25,7 @@ const Login = () => {
             const checkToken = async () => {
                 const token = await AsyncStorage.getItem("token");
                 if (token) {
-                    navigation.replace("Dashboard");
+                    navigation.replace("BottomNavigation");
                 }
             };
             checkToken();
