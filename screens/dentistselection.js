@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Card, Avatar, Button } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchDentists, setSelectedDentist } from "../redux/bookingSlice";
+import { clearDateandTime, fetchDentists, setSelectedDentist } from "../redux/bookingSlice";
 import Constants from "expo-constants";
 
 const API_URL = Constants.expoConfig.extra.API_URL;
@@ -18,6 +18,14 @@ const API_URL = Constants.expoConfig.extra.API_URL;
 const DentistSelection = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+
+  useFocusEffect(
+    useCallback(() => {
+        return () => {
+            dispatch(clearDateandTime(null));
+        };
+    }, [])
+    );
 
   // Get Redux state
   const { selectedService, selectedOffice, dentists, isLoading, selectedDentist } = useSelector((state) => state.booking);

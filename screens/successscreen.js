@@ -14,7 +14,7 @@ const SuccessScreen = () => {
 
   const handleBackToHome = () => {
     dispatch(clearBooking()); // Clear booking details
-    navigation.navigate("Dashboard"); // Adjust this as per your navigation setup
+    navigation.navigate("BottomNavigation"); // Adjust this as per your navigation setup
   };
 
   return (

@@ -6,38 +6,60 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Card, Button } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedDate, setSelectedTime } from "../redux/bookingSlice";
+import { setRescheduleTime, setRescheduleDate, rescheduleAppointment, clearReschedule } from "../redux/rescheduleSlice";
 import CalendarPicker from "react-native-calendar-picker";
 import moment from "moment";
 
 const DateTimeSelection = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const dispatch = useDispatch();
 
+  // Check if the user is rescheduling (from route params)
+  const isRescheduling = route.params?.isRescheduling || false;
+
   // Get Redux state
-  const { selectedDentist, selectedOffice, selectedDate, selectedTime } = useSelector((state) => state.booking);
+  const bookingState = useSelector((state) => state.booking);
+  const rescheduleState = useSelector((state) => state.reschedule);
+
+  // Select correct values based on the flow (normal booking or rescheduling)
+  const selectedDentist = isRescheduling ? rescheduleState.dentist : bookingState.selectedDentist;
+  const selectedOffice = isRescheduling ? rescheduleState.office : bookingState.selectedOffice;
+  const selectedDate = isRescheduling ? rescheduleState.rescheduleDate : bookingState.selectedDate;
+  const selectedTime = isRescheduling ? rescheduleState.rescheduleTime : bookingState.selectedTime;
+  const rescheduleAppointmentId = rescheduleState.rescheduleAppointmentId;
 
   // Set Default Date to Today
-  const [currentDate, setCurrentDate] = useState(moment().format("YYYY-MM-DD"));
+  const [currentDate, setCurrentDate] = useState(selectedDate || moment().format("YYYY-MM-DD"));
+  const [currentTime, setCurrentTime] = useState(selectedTime || null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Handle Date Change
   const handleDateChange = (date) => {
     const formattedDate = moment(date).format("YYYY-MM-DD");
-    setCurrentDate(formattedDate); // Update local state
-    dispatch(setSelectedDate(formattedDate)); // Update Redux state
+    setCurrentDate(formattedDate);
+
+    if (isRescheduling) {
+      dispatch(setRescheduleDate(formattedDate)); 
+    } else {
+      dispatch(setSelectedDate(formattedDate));
+    }
+
+    setCurrentTime(null); // Reset selected time when date changes
   };
 
   // Generate available time slots based on opening hours
   useEffect(() => {
     if (!selectedDentist || !selectedOffice) return;
 
-    const officeHours = selectedOffice.openingHours[moment(currentDate).format("dddd")]; // Get opening hours for the selected day
+    const officeHours = selectedOffice.openingHours[moment(currentDate).format("dddd")];
     if (!officeHours || officeHours === "Closed") {
       setAvailableSlots([]);
       return;
@@ -46,7 +68,7 @@ const DateTimeSelection = () => {
     const [start, end] = officeHours.split(" - ");
     const openingTime = moment(start, "hh:mm A");
     const closingTime = moment(end, "hh:mm A");
-    const interval = 30; // 30-minute slots
+    const interval = 30;
 
     let slots = [];
     while (openingTime.isBefore(closingTime)) {
@@ -63,7 +85,7 @@ const DateTimeSelection = () => {
 
     // Remove past times if today is selected
     if (currentDate === moment().format("YYYY-MM-DD")) {
-      const currentTime = moment(); // Get current time
+      const currentTime = moment();
       filteredSlots = filteredSlots.filter(
         (slot) => moment(slot, "hh:mm A").isAfter(currentTime)
       );
@@ -74,25 +96,45 @@ const DateTimeSelection = () => {
 
   // Handle time slot selection
   const handleTimeSelection = (time) => {
-    dispatch(setSelectedTime(time));
+    setCurrentTime(time); // Update local state to reflect selected time in UI
+
+    if (isRescheduling) {
+      dispatch(setRescheduleTime(time));
+    } else {
+      dispatch(setSelectedTime(time));
+    }
   };
 
   // Proceed to final confirmation
   const proceedToConfirmation = () => {
-    if (!currentDate || !selectedTime) {
+    if (!currentDate || !currentTime) {
       alert("Please select both date and time.");
       return;
     }
-    navigation.navigate("ConfirmationScreen"); // Navigate to final step
+
+    if (isRescheduling) {
+      dispatch(
+        rescheduleAppointment({
+          appointmentId: rescheduleAppointmentId,
+          newDate: currentDate,
+          newTime: currentTime,
+          serviceId: rescheduleState.serviceId,
+          officeId: rescheduleState.officeId,
+          dentistId: rescheduleState.dentistId,
+        })
+      );
+      Alert.alert("Success", "Appointment rescheduled successfully!");
+      dispatch(clearReschedule());
+      navigation.goBack();
+    } else {
+      navigation.navigate("ConfirmationScreen");
+    }
   };
 
   return (
     <View style={styles.container}>
-      
-      <Text style={styles.selectedDate}>
-        Select Appointment Slot
-      </Text>
-      {/*  Move Date Picker to Top */}
+      <Text style={styles.selectedDate}>Select Appointment Slot</Text>
+
       <View style={styles.calendarContainer}>
         <CalendarPicker
           onDateChange={handleDateChange}
@@ -125,13 +167,13 @@ const DateTimeSelection = () => {
             <Card
               style={[
                 styles.timeSlot,
-                selectedTime === item && styles.selectedSlot,
+                currentTime === item && styles.selectedSlot,
               ]}
             >
               <Text
                 style={[
                   styles.slotText,
-                  selectedTime === item && styles.selectedSlotText, // White text when selected
+                  currentTime === item && styles.selectedSlotText,
                 ]}
               >
                 {item}
@@ -141,10 +183,9 @@ const DateTimeSelection = () => {
         )}
       />
 
-      {/*  Fixed Bottom Button */}
       <View style={styles.buttonContainer}>
         <Button mode="contained" onPress={proceedToConfirmation} style={styles.proceedButton}>
-          Proceed to Confirmation
+          {isRescheduling ? "Reschedule Appointment" : "Proceed to Confirmation"}
         </Button>
       </View>
     </View>
@@ -153,45 +194,33 @@ const DateTimeSelection = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5", padding: 10 },
-
-  // List
   list: { flex: 1 },
-
-  //  Selected Date Display
   selectedDate: {
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
-    color: "balck",
+    color: "black",
     marginBottom: 5,
   },
   header: { fontSize: 18, fontWeight: "bold", marginVertical: 10 },
-
-  // Calendar
   calendarContainer: {
     backgroundColor: "white",
     borderRadius: 10,
     padding: 10,
     elevation: 2,
   },
-
-  // No Available Slots
   noSlots: {
     fontSize: 16,
     textAlign: "center",
     color: "gray",
     marginTop: 10,
   },
-
-  // Time Slot Container
   slotContainer: {
     paddingVertical: 10,
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 80, 
+    paddingBottom: 80,
   },
-
-  // Time Slot Styling
   timeSlot: {
     padding: 15,
     margin: 5,
@@ -210,10 +239,8 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   selectedSlotText: {
-    color: "#FFFFFF", 
+    color: "#FFFFFF",
   },
-
-  // Fixed Bottom Button
   buttonContainer: {
     position: "absolute",
     bottom: 0,
