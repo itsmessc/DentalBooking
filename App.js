@@ -3,7 +3,13 @@ import { Provider, useDispatch } from "react-redux";
 import store from "./redux/store";
 import { loadUserSession } from "./redux/authSlice";
 import AuthStack from "./navigation/authstack";
-import { PaperProvider } from "react-native-paper";
+import { PaperProvider  , DefaultTheme } from "react-native-paper";
+
+const theme={
+  ...DefaultTheme,
+  primary: "#007AFF", // Blue theme color
+  background: "#FFFFFF", 
+}
 
 const App = () => {
   const dispatch = useDispatch();
@@ -17,7 +23,7 @@ const App = () => {
 
 export default () => (
   <Provider store={store}>
-    <PaperProvider>
+    <PaperProvider theme={theme}>
     <App />
     </PaperProvider>
   </Provider>
